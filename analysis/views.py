@@ -5,6 +5,8 @@ from django.http import JsonResponse
 from pyvis.network import Network
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
+from django.http import JsonResponse
+
 MORALIS_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6ImZmNmE5NmEzLWE5NjUtNDEwNy1iZGIyLTI5N2E2YTc4NzI2NSIsIm9yZ0lkIjoiNDI5NDYyIiwidXNlcklkIjoiNDQxNzQ5IiwidHlwZUlkIjoiY2E3YjA5N2YtYzE3Mi00MTIzLTg5MTQtMmI5MmUyNTM0MDFiIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3Mzg2ODczNzksImV4cCI6NDg5NDQ0NzM3OX0.8RLifPzimTbzeBqnY4Q9AiWb2GdyEIKExDv34m46If8"
 
 def home(request):
@@ -93,11 +95,6 @@ def generate_transaction_charts(transactions):
 
 
 
-
-
-
-
-
 def fetch_transactions(wallet_address, chain="eth"):
     """Fetch transactions using Moralis API with enhanced error handling and debugging."""
     url = f"https://deep-index.moralis.io/api/v2/{wallet_address}?chain={chain}"
@@ -144,12 +141,14 @@ def fetch_transactions(wallet_address, chain="eth"):
         print(f"Unexpected Error: {str(e)}")
         return []
 
+
 def is_valid_ethereum_address(address):
     """Validate Ethereum address format."""
     import re
     # Check if address matches Ethereum address format (0x followed by 40 hex characters)
     pattern = re.compile(r'^0x[a-fA-F0-9]{40}$')
     return bool(pattern.match(address))
+
 
 @csrf_exempt
 def home(request):
@@ -203,6 +202,7 @@ def home(request):
         })
     
     return render(request, "analysis/home.html")
+
 
 def generate_spider_graph(transactions, central_address, history=None):
     """Generate an interactive graph visualization with navigation history."""
