@@ -1,0 +1,131 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoTrace - Uncover Blockchain Transactions</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'images/curr_logo.png' %}" type="image/png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <style>
+        .faq-answer { display: none; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-4 shadow-lg">
+        <div class="container mx-auto px-6 flex items-center justify-between">
+            <div class="flex items-center">
+                <img src="{% static 'images/curr_logo.png' %}" alt="Logo" class="h-12 w-12 rounded-full shadow-lg mr-3">
+                <h1 class="text-3xl font-extrabold">CryptoTrace</h1>
+            </div>
+            <nav class="hidden md:flex space-x-6">
+                <a href="{% url 'home' %}" class="hover:underline">Home</a>
+                <a href="{% url 'analyze_transactions' %}" class="hover:underline">Analyze Transactions</a>
+                <a href="{% url 'about' %}" class="hover:underline">About</a>
+                <a href="{% url 'forpdf' %}" class="hover:underline">For Pdf</a>
+            </nav>
+        </div>
+    </header>
+    
+    <section class="container mx-auto px-6 py-12 flex flex-col md:flex-row items-center">
+        <div class="w-full md:w-1/3 flex justify-center mb-6 md:mb-0">
+            <img src="{% static 'images/crypto_analysis.png' %}" alt="Crypto Analysis" class="w-65 h-65 rounded-full shadow">
+        </div>
+        <div class="w-full md:w-2/3 pl-0 md:pl-8">
+            <h2 class="text-5xl font-bold mb-4">Welcome to CryptoTrace</h2>
+            <p class="text-2xl mb-4">Unveiling the hidden trails of cryptocurrency transactions</p>
+            <p class="text-xl mb-4">Cryptocurrencies offer privacy, but sometimes, they’re misused for illicit activities. CryptoTrace is a powerful tool designed to track and analyze cryptocurrency movements in a simple and visual way.</p>
+        </div>
+    </section>
+
+    <section class="container mx-auto px-6 py-12 text-center">
+        <h2 class="text-4xl font-bold mb-4">Unveiling the Hidden Paths of Crypto Transactions</h2>
+        <p class="text-lg mb-6">CryptoTrace helps you analyze blockchain transactions, track illicit activity, and gain powerful insights into digital finance.</p>
+        <a href="{% url 'analyze_transactions' %}" class="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-lg font-semibold transition duration-300 shadow-lg">Start Analyzing</a>
+    </section>
+    
+    <section class="container mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+            <i class="fas fa-search-dollar text-blue-400 text-6xl mb-4"></i>
+            <h3 class="text-2xl font-bold">Analyze Transactions</h3>
+            <p class="mt-2">Track wallet movements and understand how cryptocurrency flows through the blockchain.</p>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+            <i class="fas fa-chart-network text-green-400 text-6xl mb-4"></i>
+            <h3 class="text-2xl font-bold">Visualize Connections</h3>
+            <p class="mt-2">Use interactive spider maps to explore wallet connections and detect suspicious patterns.</p>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+            <i class="fas fa-shield-alt text-yellow-400 text-6xl mb-4"></i>
+            <h3 class="text-2xl font-bold">Enhance Security</h3>
+            <p class="mt-2">Identify potential fraud, scams, and laundering activities to support cybersecurity efforts.</p>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+            <i class="fas fa-file-download text-red-400 text-6xl mb-4"></i>
+            <h3 class="text-2xl font-bold">Generate Reports</h3>
+            <p class="mt-2">Download detailed transaction reports for further investigation or compliance.</p>
+        </div>
+    </section>
+    
+    <section class="container mx-auto px-6 py-12 bg-gray-800 rounded-lg shadow-lg">
+        <h3 class="text-3xl font-bold mb-4 text-center">Frequently Asked Questions</h3>
+        <div class="space-y-4">
+            <button class="w-full text-left py-3 px-4 bg-gray-700 rounded hover:bg-gray-600 transition" onclick="toggleAnswer('faq1')">🔍 What is CryptoTrace?</button>
+            <div id="faq1" class="faq-answer bg-gray-700 p-4 rounded">CryptoTrace is a blockchain intelligence tool designed to trace transactions and uncover hidden financial trails.</div>
+            
+            <button class="w-full text-left py-3 px-4 bg-gray-700 rounded hover:bg-gray-600 transition" onclick="toggleAnswer('faq2')">📊 How does it work?</button>
+            <div id="faq2" class="faq-answer bg-gray-700 p-4 rounded">Simply enter a wallet address, analyze its connections, and explore transaction patterns visually.</div>
+            
+            <button class="w-full text-left py-3 px-4 bg-gray-700 rounded hover:bg-gray-600 transition" onclick="toggleAnswer('faq3')">💰 Which cryptocurrencies are supported?</button>
+            <div id="faq3" class="faq-answer bg-gray-700 p-4 rounded">Currently, Bitcoin & Ethereum are supported, with more networks coming soon.</div>
+            
+            <button class="w-full text-left py-3 px-4 bg-gray-700 rounded hover:bg-gray-600 transition" onclick="toggleAnswer('faq4')">🔍 Can I track the owner of a wallet?</button>
+            <div id="faq4" class="faq-answer bg-gray-700 p-4 rounded">Cryptocurrency wallets are pseudonymous, meaning they don’t directly reveal the owner's identity. However, our tool helps analyze transaction patterns, connections, and potentially linked IP addresses to assist investigators in identifying illicit activities.</div>
+            
+            <button class="w-full text-left py-3 px-4 bg-gray-700 rounded hover:bg-gray-600 transition" onclick="toggleAnswer('faq5')">📊 How accurate is the IP tracking feature?</button>
+            <div id="faq5" class="faq-answer bg-gray-700 p-4 rounded">IP addresses in blockchain transactions are not always available due to the decentralized nature of crypto. However, when possible, our tool integrates OSINT techniques to gather relevant data. VPNs and Tor networks may obscure real IPs, so this feature is supplementary rather than definitive.</div>
+            
+            <button class="w-full text-left py-3 px-4 bg-gray-700 rounded hover:bg-gray-600 transition" onclick="toggleAnswer('faq6')">💰 Is this tool legal to use?</button>
+            <div id="faq6" class="faq-answer bg-gray-700 p-4 rounded">Yes! CryptoTrace only uses public blockchain data, which is freely accessible. It does not hack or breach any security protocols. However, users should ensure they comply with local laws and only use the tool for ethical and investigative purposes.</div>
+            
+            <button class="w-full text-left py-3 px-4 bg-gray-700 rounded hover:bg-gray-600 transition" onclick="toggleAnswer('faq7')">🔍 Who can use CryptoTrace?</button>
+            <div id="faq7" class="faq-answer bg-gray-700 p-4 rounded">CryptoTrace is designed for:
+                <ul class="list-disc pl-5">
+                    <li>Law Enforcement Agencies (LEAs) investigating financial crimes</li>
+                    <li>Cybersecurity analysts tracking illicit transactions</li>
+                    <li>Regulatory bodies monitoring compliance</li>
+                    <li>Researchers & journalists studying blockchain activities</li>
+                    <li>Crypto enthusiasts analyzing transaction flows</li>
+                </ul>
+            </div>
+            
+            <button class="w-full text-left py-3 px-4 bg-gray-700 rounded hover:bg-gray-600 transition" onclick="toggleAnswer('faq8')">📊 How can I generate a transaction report?</button>
+            <div id="faq8" class="faq-answer bg-gray-700 p-4 rounded">Simply:
+                <ul class="list-decimal pl-5">
+                    <li>Enter a wallet address.</li>
+                    <li>Click “Analyze” to generate a spider map.</li>
+                    <li>Select “Download Report” to export a detailed PDF or CSV file with transaction history, timestamps, and wallet connections.</li>
+                </ul>
+            </div>
+            
+            <button class="w-full text-left py-3 px-4 bg-gray-700 rounded hover:bg-gray-600 transition" onclick="toggleAnswer('faq9')">💰 Can CryptoTrace prevent crypto fraud?</button>
+            <div id="faq9" class="faq-answer bg-gray-700 p-4 rounded">While CryptoTrace does not block or freeze wallets, it helps identify fraudulent patterns, flag suspicious activity, and support investigations. It’s an analysis tool, not an enforcement mechanism.</div>
+            
+            <button class="w-full text-left py-3 px-4 bg-gray-700 rounded hover:bg-gray-600 transition" onclick="toggleAnswer('faq10')">🔍 How can I contribute or request a feature?</button>
+            <div id="faq10" class="faq-answer bg-gray-700 p-4 rounded">We welcome feedback and collaboration! If you have suggestions or want to contribute to development, please contact us through the support section or visit our GitHub repository (if applicable).</div>
+        </div>
+    </section>
+    
+    <footer class="bg-gray-900 text-center py-6 mt-12 text-gray-400">
+        <p>&copy; 2025 CryptoTrace | All Rights Reserved.</p>
+    </footer>
+    
+    <script>
+        function toggleAnswer(id) {
+            const answer = document.getElementById(id);
+            answer.style.display = (answer.style.display === "none" || answer.style.display === "") ? "block" : "none";
+        }
+    </script>
+</body>
+</html>

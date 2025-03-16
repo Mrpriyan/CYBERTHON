@@ -1,0 +1,411 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyze Transactions - CryptoTrace</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'images/curr_logo.png' %}" type="image/png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script> 
+    <style>
+        .result-hidden { display: none; }
+        .result-visible { display: block; }
+        svg { width: 100%; height: 500px; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">CryptoTrace</h1>
+            <nav>
+                <a href="{% url 'home' %}" class="text-gray-400 hover:text-white mx-2">Home</a>
+                <a href="{% url 'analyze_transactions' %}" class="text-gray-400 hover:text-white mx-2">Analyze</a>
+                <a href="{% url 'about' %}" class="text-gray-400 hover:text-white mx-2">About</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-6 flex-grow">
+        <h2 class="text-3xl font-semibold mb-6">Analyze Ethereum Transactions</h2>
+
+        <!-- Wallet Address Input Form -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+            <form id="analyze-form" onsubmit="fetchTransactions(event)" class="flex flex-col md:flex-row gap-4">
+                <input 
+                    type="text" 
+                    id="wallet_input" 
+                    placeholder="Enter Ethereum Wallet Address (e.g., 0x...)" 
+                    class="flex-grow p-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                <button 
+                    type="submit" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+                >
+                    <i class="fas fa-search mr-2"></i> Analyze
+                </button>
+            </form>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="result-hidden bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h3 class="text-2xl font-semibold mb-4">Transaction Analysis</h3>
+            <div id="error-message" class="text-red-500 hidden"></div>
+            <div id="features" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"></div>
+            <a id="csv-link" href="#" target="_blank" class="text-blue-400 hover:underline hidden">
+                <i class="fas fa-download mr-2"></i> Download Transaction Data (CSV)
+            </a>
+
+            <!-- Spider Map Container -->
+            <div id="spider-map" class="mt-6"></div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 p-4 text-center">
+        <p>&copy; 2025 CryptoTrace. All rights reserved.</p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+  async function fetchTransactions(event) {
+    event.preventDefault();
+
+    const walletAddress = document.getElementById('wallet_input').value.trim();
+    const resultsDiv = document.getElementById('results');
+    const featuresDiv = document.getElementById('features');
+    const csvLink = document.getElementById('csv-link');
+    const errorMessage = document.getElementById('error-message');
+    const spiderMapDiv = document.getElementById('spider-map');
+
+    resultsDiv.classList.remove('result-visible');
+    resultsDiv.classList.add('result-hidden');
+    featuresDiv.innerHTML = '';
+    csvLink.classList.add('hidden');
+    errorMessage.classList.add('hidden');
+    errorMessage.textContent = '';
+    spiderMapDiv.innerHTML = '<div class="text-center p-4">Loading transaction data...</div>';
+
+    try {
+        const response = await fetch(`/fetch_all_transaction/?wallet_address=${encodeURIComponent(walletAddress)}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Unknown error occurred');
+        }
+
+        resultsDiv.classList.remove('result-hidden');
+        resultsDiv.classList.add('result-visible');
+        
+        for (const [key, value] of Object.entries(data.features)) {
+            const p = document.createElement('p');
+            p.innerHTML = `<span class="font-bold">${key}:</span> ${value}`;
+            featuresDiv.appendChild(p);
+        }
+
+        csvLink.href = data.csv_download_link;
+        csvLink.classList.remove('hidden');
+
+        // Check if we have transaction data
+        if (!data.transactions || data.transactions.length === 0) {
+            spiderMapDiv.innerHTML = '<div class="text-center p-4">No transaction data available to visualize</div>';
+            return;
+        }
+
+        console.log(`Received ${data.transactions.length} transactions from API`);
+        drawSpiderGraph(data.transactions);
+
+    } catch (error) {
+        resultsDiv.classList.remove('result-hidden');
+        resultsDiv.classList.add('result-visible');
+        errorMessage.textContent = error.message;
+        errorMessage.classList.remove('hidden');
+        spiderMapDiv.innerHTML = '<div class="text-center p-4 text-red-500">Error loading transaction data</div>';
+        console.error("Error fetching transactions:", error);
+    }
+}
+function drawSpiderGraph(transactions) {
+    // Clear previous graph
+    d3.select("#spider-map").html("");
+    
+    // Limit transactions to prevent browser freezing
+    const MAX_TRANSACTIONS = 5000;
+    
+    // Sort transactions by timestamp if available
+    if (transactions.length > 0 && transactions[0].timestamp) {
+        transactions.sort((a, b) => b.timestamp - a.timestamp);
+    }
+    
+    const displayTransactions = transactions.slice(0, MAX_TRANSACTIONS);
+    console.log(`Processing ${displayTransactions.length} transactions for visualization`);
+    
+    const width = 800, height = 500;
+    const svg = d3.select("#spider-map")
+                  .append("svg")
+                  .attr("viewBox", `0 0 ${width} ${height}`)
+                  .attr("preserveAspectRatio", "xMidYMid meet");
+
+    // Add zoom functionality
+    const zoom = d3.zoom()
+        .scaleExtent([0.5, 5])
+        .on("zoom", (event) => {
+            g.attr("transform", event.transform);
+        });
+    
+    svg.call(zoom);
+    
+    // Create a group for all elements
+    const g = svg.append("g");
+
+    // Function to shorten addresses for display
+    function shortenAddress(address) {
+        if (!address) return "unknown";
+        return address.substring(0, 6) + "..." + address.substring(address.length - 4);
+    }
+
+    // Get the main wallet address
+    const mainWalletAddress = document.getElementById('wallet_input').value.trim().toLowerCase();
+    
+    // Create a set of unique addresses and track connections
+    const uniqueAddresses = new Set();
+    const connections = new Map();
+    
+    // Process transactions to get unique addresses and connections
+    displayTransactions.forEach(tx => {
+        if (!tx.from || !tx.to) {
+            console.log("Skipping transaction with missing from/to:", tx);
+            return;
+        }
+        
+        const source = tx.from.toLowerCase();
+        const target = tx.to.toLowerCase();
+        
+        uniqueAddresses.add(source);
+        uniqueAddresses.add(target);
+        
+        // Track connections for deduplication
+        const connectionKey = `${source}-${target}`;
+        if (!connections.has(connectionKey)) {
+            connections.set(connectionKey, {
+                source: source,
+                target: target,
+                values: [],
+                types: []
+            });
+        }
+        
+        const connection = connections.get(connectionKey);
+        connection.values.push(tx.eth_value);
+        connection.types.push(tx.txn_type);
+    });
+    
+    // Create nodes
+    const nodes = Array.from(uniqueAddresses).map(address => ({
+        id: address,
+        displayId: shortenAddress(address),
+        isMainWallet: address === mainWalletAddress
+    }));
+    
+    // Create links with aggregated values
+    const links = Array.from(connections.values()).map(conn => {
+        // Calculate total value and determine predominant type
+        const totalValue = conn.values.reduce((sum, val) => sum + val, 0);
+        const sentCount = conn.types.filter(t => t === 'sent').length;
+        const predominantType = sentCount > conn.types.length / 2 ? 'sent' : 'received';
+        
+        return {
+            source: conn.source,
+            target: conn.target,
+            value: totalValue,
+            type: predominantType
+        };
+    });
+    
+    console.log(`Created ${nodes.length} nodes and ${links.length} links`);
+
+    // Calculate domain for line thickness
+    const valueExtent = d3.extent(links, d => d.value);
+    const lineScale = d3.scaleLinear()
+        .domain(valueExtent)
+        .range([1, 5]);
+
+    // Create simulation with improved forces
+    const simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+        .force("charge", d3.forceManyBody().strength(-300))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collision", d3.forceCollide().radius(30));
+
+    // Create arrow markers for directed edges
+    svg.append("defs").selectAll("marker")
+        .data(["sent", "received"])
+        .enter().append("marker")
+        .attr("id", d => d)
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", 15)
+        .attr("refY", 0)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("orient", "auto")
+        .append("path")
+        .attr("d", "M0,-5L10,0L0,5")
+        .attr("fill", d => d === "sent" ? "#ff4d4d" : "#4dff4d");
+
+    // Draw links with arrows
+    const link = g.append("g")
+        .selectAll("line")
+        .data(links)
+        .enter().append("line")
+        .attr("stroke", d => d.type === "sent" ? "#ff4d4d" : "#4dff4d")
+        .attr("stroke-width", d => lineScale(d.value))
+        .attr("marker-end", d => `url(#${d.type})`);
+
+    // Create node groups
+    const node = g.append("g")
+        .selectAll("g")
+        .data(nodes)
+        .enter().append("g")
+        .call(d3.drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended));
+
+    // Add circles to nodes
+    node.append("circle")
+        .attr("r", d => d.isMainWallet ? 12 : 8)
+        .attr("fill", d => d.isMainWallet ? "#ff9900" : "#6699cc");
+
+    // Add text labels with background
+    const label = node.append("g");
+    
+    // Add text background
+    label.append("rect")
+        .attr("rx", 5)
+        .attr("ry", 5)
+        .attr("fill", "rgba(0, 0, 0, 0.7)")
+        .attr("width", d => d.displayId.length * 7)
+        .attr("height", 20)
+        .attr("x", -12)
+        .attr("y", 10);
+    
+    // Add text
+    label.append("text")
+        .text(d => d.displayId)
+        .attr("text-anchor", "middle")
+        .attr("fill", "white")
+        .attr("y", 25)
+        .attr("font-size", "10px");
+
+    // Add tooltips for full address on hover
+    node.append("title")
+        .text(d => d.id);
+
+    // Add legend
+    const legend = svg.append("g")
+        .attr("transform", "translate(20, 20)");
+    
+    // Main wallet
+    legend.append("circle")
+        .attr("r", 6)
+        .attr("fill", "#ff9900")
+        .attr("cx", 10)
+        .attr("cy", 10);
+    
+    legend.append("text")
+        .text("Main Wallet")
+        .attr("x", 25)
+        .attr("y", 14)
+        .attr("fill", "white")
+        .attr("font-size", "12px");
+    
+    // Other wallet
+    legend.append("circle")
+        .attr("r", 6)
+        .attr("fill", "#6699cc")
+        .attr("cx", 10)
+        .attr("cy", 35);
+    
+    legend.append("text")
+        .text("Other Wallet")
+        .attr("x", 25)
+        .attr("y", 39)
+        .attr("fill", "white")
+        .attr("font-size", "12px");
+    
+    // Sent transaction
+    legend.append("line")
+        .attr("x1", 0)
+        .attr("y1", 60)
+        .attr("x2", 20)
+        .attr("y2", 60)
+        .attr("stroke", "#ff4d4d")
+        .attr("stroke-width", 2)
+        .attr("marker-end", "url(#sent)");
+    
+    legend.append("text")
+        .text("Sent")
+        .attr("x", 25)
+        .attr("y", 64)
+        .attr("fill", "white")
+        .attr("font-size", "12px");
+    
+    // Received transaction
+    legend.append("line")
+        .attr("x1", 0)
+        .attr("y1", 85)
+        .attr("x2", 20)
+        .attr("y2", 85)
+        .attr("stroke", "#4dff4d")
+        .attr("stroke-width", 2)
+        .attr("marker-end", "url(#received)");
+    
+    legend.append("text")
+        .text("Received")
+        .attr("x", 25)
+        .attr("y", 89)
+        .attr("fill", "white")
+        .attr("font-size", "12px");
+
+    // Add transaction count information
+    svg.append("text")
+        .attr("x", width - 20)
+        .attr("y", 30)
+        .attr("text-anchor", "end")
+        .attr("fill", "white")
+        .text(`Showing ${displayTransactions.length} of ${transactions.length} transactions`);
+
+    // Update positions on simulation tick
+    simulation.on("tick", () => {
+        link
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
+
+        node.attr("transform", d => `translate(${d.x}, ${d.y})`);
+    });
+
+    // Drag functions
+    function dragstarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+    }
+
+    function dragended(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+}
+    </script>
+</body>
+</html>
