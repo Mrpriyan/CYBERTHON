@@ -67,8 +67,7 @@ ROOT_URLCONF = 'crypto_analysis.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "analysis/templates"],
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'analysis/spider_map')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

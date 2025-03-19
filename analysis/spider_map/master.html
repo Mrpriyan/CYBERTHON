@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethereum Transaction Spider Maps</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: #2a2a72;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            background-color: #f0f0f0;
+        }
+        .btn {
+            padding: 8px 16px;
+            margin: 0 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .batch-indicator {
+            margin: 0 20px;
+            font-size: 16px;
+            line-height: 2;
+        }
+        .iframe-container {
+            flex: 1;
+            width: 100%;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Ethereum Transaction Spider Maps</h1>
+    </div>
+    
+    <div class="controls">
+        <button id="prevBtn" class="btn">Previous Batch</button>
+        <div class="batch-indicator">
+            Batch <span id="currentBatch">1</span> of <span id="totalBatches">6</span>
+        </div>
+        <button id="nextBtn" class="btn">Next Batch</button>
+    </div>
+    
+    <div class="iframe-container">
+        <iframe id="mapFrame" src="html_files/3d_spider_map_batch_1.html"></iframe>
+    </div>
+
+    <script>
+        const batchFiles = [
+            "html_files/3d_spider_map_batch_1.html",
+            "html_files/3d_spider_map_batch_2.html",
+            "html_files/3d_spider_map_batch_3.html",
+            "html_files/3d_spider_map_batch_4.html",
+            "html_files/3d_spider_map_batch_5.html",
+            "html_files/3d_spider_map_batch_6.html",
+        ];
+        
+        const currentBatchElem = document.getElementById('currentBatch');
+        const totalBatchesElem = document.getElementById('totalBatches');
+        const mapFrame = document.getElementById('mapFrame');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        let currentBatchIndex = 0;
+        totalBatchesElem.textContent = batchFiles.length;
+        
+        function updateIframe() {
+            mapFrame.src = batchFiles[currentBatchIndex];
+            currentBatchElem.textContent = currentBatchIndex + 1;
+            
+            // Update button states
+            prevBtn.disabled = currentBatchIndex === 0;
+            nextBtn.disabled = currentBatchIndex === batchFiles.length - 1;
+        }
+        
+        prevBtn.addEventListener('click', () => {
+            if (currentBatchIndex > 0) {
+                currentBatchIndex--;
+                updateIframe();
+            }
+        });
+        
+        nextBtn.addEventListener('click', () => {
+            if (currentBatchIndex < batchFiles.length - 1) {
+                currentBatchIndex++;
+                updateIframe();
+            }
+        });
+        
+        // Initial setup
+        updateIframe();
+    </script>
+</body>
+</html>
