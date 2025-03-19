@@ -1,0 +1,270 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spider Map Visualization - CryptoTrace</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'images/curr_logo.png' %}" type="image/png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1c2c 0%, #121420 100%);
+        }
+        
+        header {
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .container {
+            max-width: 2400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .form-container {
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .form-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+        .loading div {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3B82F6;
+            animation: loading 1.2s linear infinite;
+        }
+        .loading div:nth-child(1) {
+            top: 8px;
+            left: 8px;
+            animation-delay: 0s;
+        }
+        .loading div:nth-child(2) {
+            top: 8px;
+            left: 32px;
+            animation-delay: -0.4s;
+        }
+        .loading div:nth-child(3) {
+            top: 8px;
+            left: 56px;
+            animation-delay: -0.8s;
+        }
+        .loading div:nth-child(4) {
+            top: 32px;
+            left: 8px;
+            animation-delay: -0.4s;
+        }
+        .loading div:nth-child(5) {
+            top: 32px;
+            left: 32px;
+            animation-delay: -0.8s;
+        }
+        .loading div:nth-child(6) {
+            top: 32px;
+            left: 56px;
+            animation-delay: -1.2s;
+        }
+        .loading div:nth-child(7) {
+            top: 56px;
+            left: 8px;
+            animation-delay: -0.8s;
+        }
+        .loading div:nth-child(8) {
+            top: 56px;
+            left: 32px;
+            animation-delay: -1.2s;
+        }
+        .loading div:nth-child(9) {
+            top: 56px;
+            left: 56px;
+            animation-delay: -1.6s;
+        }
+        @keyframes loading {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        #spider-map-container {
+            min-height: 1600px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        #spider-map-frame {
+            width: 100%;
+            height: 100%;
+            min-height: 1600px;
+            border: none;
+        }
+        
+        /* Responsive iframe container */
+        @media (min-width: 1920px) {
+            #spider-map-container {
+                min-height: 1800px;
+            }
+            #spider-map-frame {
+                min-height: 1800px;
+            }
+        }
+        
+        @media (max-width: 1919px) {
+            #spider-map-container {
+                min-height: 1600px;
+            }
+            #spider-map-frame {
+                min-height: 1600px;
+            }
+        }
+        
+        @media (max-width: 1440px) {
+            #spider-map-container {
+                min-height: 1400px;
+            }
+            #spider-map-frame {
+                min-height: 1400px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="p-4 fixed w-full z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+                CryptoTrace
+            </h1>
+            <nav>
+                <a href="{% url 'home' %}" class="text-gray-400 hover:text-white mx-2">Home</a>
+                <a href="{% url 'analyze_transactions' %}" class="text-gray-400 hover:text-white mx-2">Analyze</a>
+                <a href="{% url 'about' %}" class="text-gray-400 hover:text-white mx-2">About</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-6 flex-grow pt-20">
+        <h2 class="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+            Spider Map Visualization
+        </h2>
+        
+        <div class="form-container p-6 rounded-lg shadow-lg mb-6">
+            <div id="wallet-info" class="mb-4 text-blue-400 text-center">
+                <p>Loading wallet information...</p>
+            </div>
+            
+            <!-- Loading indicator -->
+            <div id="loading-indicator" class="text-center py-8">
+                <div class="loading">
+                    <div></div><div></div><div></div>
+                    <div></div><div></div><div></div>
+                    <div></div><div></div><div></div>
+                </div>
+                <p class="mt-4 text-blue-400">Loading visualization, please wait...</p>
+            </div>
+            
+            <div id="spider-map-container" class="hidden">
+                <iframe id="spider-map-frame" src=""></iframe>
+            </div>
+            
+            <div id="error-message" class="hidden text-red-500 text-center p-4"></div>
+            
+            <div class="text-center mt-6">
+                <a href="{% url 'analyze_transactions' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Analysis
+                </a>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get query parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const walletAddress = urlParams.get('wallet_address');
+            const startDate = urlParams.get('start_date');
+            const endDate = urlParams.get('end_date');
+            
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const spiderMapContainer = document.getElementById('spider-map-container');
+            const spiderMapFrame = document.getElementById('spider-map-frame');
+            const errorMessage = document.getElementById('error-message');
+            const walletInfo = document.getElementById('wallet-info');
+            
+            // Display wallet info
+            if (walletAddress) {
+                walletInfo.innerHTML = `
+                    <p><strong>Wallet Address:</strong> ${walletAddress}</p>
+                    <p><strong>Date Range:</strong> ${startDate || 'N/A'} to ${endDate || 'N/A'}</p>
+                `;
+            } else {
+                walletInfo.innerHTML = '<p>No wallet address provided</p>';
+                loadingIndicator.classList.add('hidden');
+                errorMessage.textContent = 'Missing wallet address parameter';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            
+            // Fetch the spider map
+            async function fetchSpiderMap() {
+                try {
+                    const params = new URLSearchParams({
+                        wallet_address: walletAddress,
+                        start_date: startDate || '',
+                        end_date: endDate || ''
+                    });
+                    
+                    const url = `/generate_spider_map/?${params}`;
+                    
+                    // Set the iframe source
+                    spiderMapFrame.src = url;
+                    
+                    // Show the iframe when it loads
+                    spiderMapFrame.onload = function() {
+                        loadingIndicator.classList.add('hidden');
+                        spiderMapContainer.classList.remove('hidden');
+                    };
+                    
+                    // Handle iframe errors
+                    spiderMapFrame.onerror = function() {
+                        loadingIndicator.classList.add('hidden');
+                        errorMessage.textContent = 'Failed to load visualization';
+                        errorMessage.classList.remove('hidden');
+                    };
+                    
+                } catch (error) {
+                    loadingIndicator.classList.add('hidden');
+                    errorMessage.textContent = `Error: ${error.message}`;
+                    errorMessage.classList.remove('hidden');
+                }
+            }
+            
+            // Start fetching the spider map
+            fetchSpiderMap();
+        });
+    </script>
+</body>
+</html>

@@ -1,2 +1,0 @@
-Address,Avg min between sent tnx,Avg min between received tnx,Time Diff between first and last (Mins),Sent tnx,Received Tnx,Number of Created Contracts,Unique Received From Addresses,Unique Sent To Addresses,min value received,max value received,avg val received,min val sent,max val sent,avg val sent,total transactions,total Ether sent,total ether received,total ether balance
-0x58b6a8a3302369daec383334672404ee733ab239,0,40.734381771510485,407303.0833333333,0,10000,1,5173,0,0,0.01,3.1600000000000002e-06,0,0,0,10000,0,0.0316,0.0316
