@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - CryptoTrace</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'images/curr_logo.png' %}" type="image/png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <style>
+        .faq-answer { display: none; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-4 shadow-lg">
+        <div class="container mx-auto px-6 flex items-center justify-between">
+            <div class="flex items-center">
+                <img src="{% static 'images/curr_logo.png' %}" alt="Logo" class="h-12 w-12 rounded-full shadow-lg mr-3">
+                <h1 class="text-3xl font-extrabold">CryptoTrace</h1>
+            </div>
+            <nav class="hidden md:flex space-x-6">
+                <a href="{% url 'home' %}" class="hover:underline">Home</a>
+                <a href="{% url 'analyze_transactions' %}" class="hover:underline">Analyze Transactions</a>
+                <a href="{% url 'about' %}" class="hover:underline">About</a>
+                <a href="{% url 'forpdf' %}" class="hover:underline">For Pdf</a>
+            </nav>
+        </div>
+    </header>
+    
+    <section class="container mx-auto px-6 py-12 max-w-7xl">
+        <h2 class="text-5xl font-bold mb-4">About CryptoTrace</h2>
+        <p class="text-2xl mb-4">Unveiling the hidden trails of cryptocurrency transactions</p>
+        <p class="text-xl mb-4">CryptoTrace is a powerful tool designed to track and analyze cryptocurrency movements in a simple and visual way. Whether you’re a law enforcement agency (LEA), cybersecurity expert, or researcher, our tool helps you:</p>
+        <ul class="list-disc pl-5 mb-4 text-lg">
+            <li>✅ Trace cryptocurrency transactions across multiple wallets</li>
+            <li>✅ Generate detailed wallet history reports with timestamps & amounts</li>
+            <li>✅ Visualize wallet connections with interactive spider maps</li>
+            <li>✅ Identify suspicious activity patterns linked to money laundering, fraud, or scams</li>
+            <li>✅ Track IP addresses associated with transactions for deeper analysis</li>
+        </ul>
+        <h3 class="text-2xl font-semibold mb-2">Project Phases and Steps</h3>
+        <ol class="list-decimal pl-5 mb-4 text-lg">
+            <li class="mb-2">
+                <strong>Phase 1: Research and Planning</strong>
+                <ul class="list-disc pl-5">
+                    <li>Identify the requirements and objectives of the tool.</li>
+                    <li>Research existing solutions and technologies.</li>
+                    <li>Plan the architecture and design of the tool.</li>
+                </ul>
+            </li>
+            <li class="mb-2">
+                <strong>Phase 2: Development</strong>
+                <ul class="list-disc pl-5">
+                    <li>Set up the development environment.</li>
+                    <li>Develop the core functionalities such as transaction tracing and visualization.</li>
+                    <li>Integrate with blockchain APIs to fetch transaction data.</li>
+                    <li>Implement IP address tracing and analysis features.</li>
+                </ul>
+            </li>
+            <li class="mb-2">
+                <strong>Phase 3: Testing and Validation</strong>
+                <ul class="list-disc pl-5">
+                    <li>Test the tool with various scenarios and datasets.</li>
+                    <li>Validate the accuracy and performance of the tool.</li>
+                    <li>Fix any bugs and improve the tool based on feedback.</li>
+                </ul>
+            </li>
+            <li class="mb-2">
+                <strong>Phase 4: Deployment and Maintenance</strong>
+                <ul class="list-disc pl-5">
+                    <li>Deploy the tool to a production environment.</li>
+                    <li>Monitor the tool's performance and usage.</li>
+                    <li>Provide ongoing maintenance and updates.</li>
+                </ul>
+            </li>
+        </ol>
+        <h3 class="text-2xl font-semibold mb-2">Contact Details</h3>
+        <ul class="list-disc pl-5 text-lg">
+            <li><a href="mailto:saran2732006s@gmail.com" class="text-blue-600 hover:underline">Saran S : saran2732006s@gmail.com</a></li>
+            <li><a href="mailto:Parishith.mohan@gmail.com" class="text-blue-600 hover:underline">Parishith MR : Parishith.mohan@gmail.com</a></li>
+            <li><a href="mailto:vishwapriyan21@gmail.com" class="text-blue-600 hover:underline">Viswa Priyan : vishwapriyan21@gmail.com</a></li>
+        </ul>
+    </section>
+
+    <footer class="bg-gray-900 text-center py-6 mt-12 text-gray-400">
+        <p>&copy; 2025 CryptoTrace | All Rights Reserved.</p>
+    </footer>
+    
+    <script>
+        function toggleAnswer(id) {
+            const answer = document.getElementById(id);
+            answer.style.display = (answer.style.display === "none" || answer.style.display === "") ? "block" : "none";
+        }
+    </script>
+</body>
+</html>

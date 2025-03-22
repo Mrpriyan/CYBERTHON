@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Transaction Analysis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        .metric {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        .risk-high {
+            color: #e74c3c;
+        }
+        .risk-medium {
+            color: #f39c12;
+        }
+        .risk-low {
+            color: #27ae60;
+        }
+        .alert {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+            color: #856404;
+        }
+        .alert-info {
+            background-color: #cce5ff;
+            border-color: #b8daff;
+            color: #004085;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="card full-width">
+        <h1>Advanced Transaction Analysis</h1>
+        <div>
+            <input type="text" id="walletAddress" placeholder="Enter wallet address" style="padding: 8px; width: 300px;">
+            <button onclick="analyzeWallet()">Analyze Wallet</button>
+            <button onclick="downloadPDF()">Download Report</button>
+        </div>
+    </div>
+
+    <div class="dashboard-grid" id="analysisResults" style="display: none;">
+        <!-- Key Metrics -->
+        <div class="card">
+            <h2>Key Metrics</h2>
+            <div id="keyMetrics"></div>
+        </div>
+
+        <!-- Risk Assessment -->
+        <div class="card">
+            <h2>Risk Assessment</h2>
+            <div id="riskMetrics"></div>
+        </div>
+
+        <!-- Transaction Patterns -->
+        <div class="card full-width">
+            <h2>Transaction Patterns</h2>
+            <div class="chart-container">
+                <canvas id="patternChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Interaction Analysis -->
+        <div class="card">
+            <h2>Wallet Interactions</h2>
+            <div id="interactionAnalysis"></div>
+        </div>
+
+        <!-- Notable Events -->
+        <div class="card">
+            <h2>Notable Events</h2>
+            <div id="notableEvents"></div>
+        </div>
+
+        <!-- Value Flow Analysis -->
+        <div class="card full-width">
+            <h2>Value Flow Analysis</h2>
+            <div class="chart-container">
+                <canvas id="valueFlowChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MORALIS_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6ImZmNmE5NmEzLWE5NjUtNDEwNy1iZGIyLTI5N2E2YTc4NzI2NSIsIm9yZ0lkIjoiNDI5NDYyIiwidXNlcklkIjoiNDQxNzQ5IiwidHlwZUlkIjoiY2E3YjA5N2YtYzE3Mi00MTIzLTg5MTQtMmI5MmUyNTM0MDFiIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3Mzg2ODczNzksImV4cCI6NDg5NDQ0NzM3OX0.8RLifPzimTbzeBqnY4Q9AiWb2GdyEIKExDv34m46If8";
+
+        async function analyzeWallet() {
+            const walletAddress = document.getElementById('walletAddress').value;
+            if (!walletAddress) {
+                alert('Please enter a wallet address');
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://deep-index.moralis.io/api/v2/${walletAddress}?chain=eth`, {
+                    headers: {
+                        'X-API-Key': MORALIS_API_KEY
+                    }
+                });
+
+                const data = await response.json();
+                document.getElementById('analysisResults').style.display = 'grid';
+                
+                analyzeTransactions(data.result);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error fetching wallet data');
+            }
+        }
+
+        function analyzeTransactions(transactions) {
+            // Calculate key metrics
+            const totalVolume = transactions.reduce((sum, tx) => sum + Number(tx.value) / 1e18, 0);
+            const uniqueContacts = new Set([...transactions.map(tx => tx.from_address), ...transactions.map(tx => tx.to_address)]).size;
+            
+            // Display key metrics
+            document.getElementById('keyMetrics').innerHTML = `
+                <div>
+                    <div class="metric">${transactions.length}</div>
+                    <div class="metric-label">Total Transactions</div>
+                </div>
+                <div style="margin-top: 15px">
+                    <div class="metric">${totalVolume.toFixed(2)} ETH</div>
+                    <div class="metric-label">Total Volume</div>
+                </div>
+                <div style="margin-top: 15px">
+                    <div class="metric">${uniqueContacts}</div>
+                    <div class="metric-label">Unique Contacts</div>
+                </div>
+            `;
+
+            // Analyze transaction patterns
+            const patterns = analyzePatterns(transactions);
+            createPatternChart(patterns);
+
+            // Risk assessment
+            const riskScore = calculateRiskScore(transactions);
+            displayRiskMetrics(riskScore);
+
+            // Interaction analysis
+            analyzeInteractions(transactions);
+
+            // Notable events
+            findNotableEvents(transactions);
+
+            // Value flow analysis
+            createValueFlowChart(transactions);
+        }
+
+        function analyzePatterns(transactions) {
+            const hourlyDistribution = new Array(24).fill(0);
+            transactions.forEach(tx => {
+                const hour = new Date(tx.block_timestamp).getHours();
+                hourlyDistribution[hour]++;
+            });
+            return hourlyDistribution;
+        }
+
+        function createPatternChart(patterns) {
+            const ctx = document.getElementById('patternChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    datasets: [{
+                        label: 'Transaction Frequency by Hour',
+                        data: patterns,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function calculateRiskScore(transactions) {
+            // Example risk factors
+            const unusualHours = transactions.filter(tx => {
+                const hour = new Date(tx.block_timestamp).getHours();
+                return hour >= 0 && hour <= 4;
+            }).length;
+
+            const largeTransactions = transactions.filter(tx => 
+                Number(tx.value) / 1e18 > 10
+            ).length;
+
+            return {
+                unusualActivity: unusualHours / transactions.length,
+                largeTransactions: largeTransactions,
+                overallScore: Math.min(100, (unusualHours * 10 + largeTransactions * 5))
+            };
+        }
+
+        function displayRiskMetrics(riskScore) {
+            const riskClass = riskScore.overallScore > 70 ? 'risk-high' : 
+                            riskScore.overallScore > 30 ? 'risk-medium' : 'risk-low';
+
+            document.getElementById('riskMetrics').innerHTML = `
+                <div class="${riskClass}">
+                    <div class="metric">${riskScore.overallScore}/100</div>
+                    <div class="metric-label">Risk Score</div>
+                </div>
+                <div class="alert alert-info" style="margin-top: 15px">
+                    ${riskScore.largeTransactions} large transactions detected
+                </div>
+                <div class="alert alert-warning" style="margin-top: 10px">
+                    ${(riskScore.unusualActivity * 100).toFixed(1)}% activity during unusual hours
+                </div>
+            `;
+        }
+
+        function analyzeInteractions(transactions) {
+            const interactions = {};
+            transactions.forEach(tx => {
+                interactions[tx.to_address] = (interactions[tx.to_address] || 0) + 1;
+            });
+
+            const sortedInteractions = Object.entries(interactions)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5);
+
+            document.getElementById('interactionAnalysis').innerHTML = `
+                <div class="metric-label">Top Interactions:</div>
+                ${sortedInteractions.map(([address, count]) => `
+                    <div style="margin-top: 10px">
+                        <div>${address.substring(0, 16)}...</div>
+                        <div class="metric-label">${count} transactions</div>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function findNotableEvents(transactions) {
+            const events = [];
+            let lastTimestamp = null;
+
+            transactions.forEach(tx => {
+                const value = Number(tx.value) / 1e18;
+                const timestamp = new Date(tx.block_timestamp);
+
+                if (value > 10) {
+                    events.push({
+                        type: 'Large Transaction',
+                        details: `${value.toFixed(2)} ETH transferred`
+                    });
+                }
+
+                if (lastTimestamp) {
+                    const timeDiff = timestamp - lastTimestamp;
+                    if (timeDiff < 1000 * 60 * 5) { // 5 minutes
+                        events.push({
+                            type: 'Rapid Transactions',
+                            details: 'Multiple transactions in short time'
+                        });
+                    }
+                }
+                lastTimestamp = timestamp;
+            });
+
+            document.getElementById('notableEvents').innerHTML = events
+                .slice(0, 5)
+                .map(event => `
+                    <div class="alert alert-info">
+                        <strong>${event.type}</strong><br>
+                        ${event.details}
+                    </div>
+                `).join('');
+        }
+
+        function createValueFlowChart(transactions) {
+            const ctx = document.getElementById('valueFlowChart').getContext('2d');
+            const values = transactions.slice(0, 10).map(tx => Number(tx.value) / 1e18);
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: transactions.slice(0, 10).map((_, i) => `Tx ${i + 1}`),
+                    datasets: [{
+                        label: 'Transaction Value (ETH)',
+                        data: values,
+                        backgroundColor: values.map(v => 
+                            v > 10 ? 'rgba(231, 76, 60, 0.2)' :
+                            v > 5 ? 'rgba(243, 156, 18, 0.2)' :
+                            'rgba(46, 204, 113, 0.2)'
+                        ),
+                        borderColor: values.map(v => 
+                            v > 10 ? 'rgb(231, 76, 60)' :
+                            v > 5 ? 'rgb(243, 156, 18)' :
+                            'rgb(46, 204, 113)'
+                        ),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        async function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const elements = document.getElementsByClassName('card');
+            
+            let yOffset = 10;
+            
+            for (let element of elements) {
+                if (yOffset > 250) {
+                    doc.addPage();
+                    yOffset = 10;
+                }
+                
+                const canvas = await html2canvas(element);
+                const imgData = canvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', 10, yOffset, 190, (canvas.height * 190) / canvas.width);
+                yOffset += (canvas.height * 190) / canvas.width + 10;
+            }
+            
+            doc.save(`Wallet_Analysis_${document.getElementById('walletAddress').value}.pdf`);
+        }
+    </script>
+</body>
+</html>

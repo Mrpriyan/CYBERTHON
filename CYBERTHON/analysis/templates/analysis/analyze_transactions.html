@@ -1,0 +1,579 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyze Transactions - CryptoTrace</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'images/curr_logo.png' %}" type="image/png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script> 
+    <style>
+        .result-hidden { display: none; }
+        .result-visible { display: block; }
+        svg { width: 100%; height: 500px; }
+        
+        /* New theme styles */
+        body {
+            background: linear-gradient(135deg, #1a1c2c 0%, #121420 100%);
+        }
+        
+        header {
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .container {
+            max-width: 2400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .form-container {
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            width: 100%;  /* Ensure full width within container */
+        }
+        
+        .form-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        input[type="text"] {
+            background: rgba(31, 41, 55, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        input[type="text"]:focus {
+            background: rgba(31, 41, 55, 0.9);
+            border-color: #3B82F6;
+        }
+        
+        button[type="submit"] {
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            transition: all 0.3s ease;
+        }
+        
+        button[type="submit"]:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        #results {
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+        .loading div {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3B82F6;
+            animation: loading 1.2s linear infinite;
+        }
+        .loading div:nth-child(1) {
+            top: 8px;
+            left: 8px;
+            animation-delay: 0s;
+        }
+        .loading div:nth-child(2) {
+            top: 8px;
+            left: 32px;
+            animation-delay: -0.4s;
+        }
+        .loading div:nth-child(3) {
+            top: 8px;
+            left: 56px;
+            animation-delay: -0.8s;
+        }
+        .loading div:nth-child(4) {
+            top: 32px;
+            left: 8px;
+            animation-delay: -0.4s;
+        }
+        .loading div:nth-child(5) {
+            top: 32px;
+            left: 32px;
+            animation-delay: -0.8s;
+        }
+        .loading div:nth-child(6) {
+            top: 32px;
+            left: 56px;
+            animation-delay: -1.2s;
+        }
+        .loading div:nth-child(7) {
+            top: 56px;
+            left: 8px;
+            animation-delay: -0.8s;
+        }
+        .loading div:nth-child(8) {
+            top: 56px;
+            left: 32px;
+            animation-delay: -1.2s;
+        }
+        .loading div:nth-child(9) {
+            top: 56px;
+            left: 56px;
+            animation-delay: -1.6s;
+        }
+        @keyframes loading {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Add responsive padding for better mobile display */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 0.5rem;
+            }
+        }
+        
+        /* Make the spider map container responsive */
+        @media (min-width: 1920px) {
+            #spider-map {
+                min-height: 1800px;
+            }
+            #network-container {
+                height: 1700px;
+            }
+        }
+        
+        @media (max-width: 1919px) {
+            #spider-map {
+                min-height: 1600px;
+            }
+            #network-container {
+                height: 1500px;
+            }
+        }
+        
+        @media (max-width: 1440px) {
+            #spider-map {
+                min-height: 1400px;
+            }
+            #network-container {
+                height: 1300px;
+            }
+        }
+
+        /* Updated container styles for better iframe handling */
+       /* Updated container styles for better iframe handling */
+#spider-map {
+    min-height: 800px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+#network-container {
+    height: 700px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    background: rgba(17, 24, 39, 0.5);
+    border-radius: 0.5rem;
+}
+
+#spider-map-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Ensure frame is responsive */
+@media (min-width: 1920px) {
+    #spider-map { min-height: 1000px; }
+    #network-container { height: 900px; }
+}
+
+@media (max-width: 1440px) {
+    #spider-map { min-height: 700px; }
+    #network-container { height: 600px; }
+}
+
+@media (max-width: 768px) {
+    #spider-map { min-height: 500px; }
+    #network-container { height: 400px; }
+}
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="p-4 fixed w-full z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+                CryptoTrace
+            </h1>
+            <nav>
+                <a href="{% url 'home' %}" class="text-gray-400 hover:text-white mx-2">Home</a>
+                <a href="{% url 'analyze_transactions' %}" class="text-gray-400 hover:text-white mx-2">Analyze</a>
+                <a href="{% url 'about' %}" class="text-gray-400 hover:text-white mx-2">About</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-6 flex-grow pt-20">
+        <h2 class="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+            Analyze Ethereum Transactions
+        </h2>
+
+        <!-- Wallet Address Input Form -->
+        <div class="form-container p-6 rounded-lg shadow-lg mb-6">
+            <form id="wallet-form" class="flex flex-col gap-4">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <input 
+                        type="text" 
+                        id="wallet_input" 
+                        placeholder="Enter Ethereum Wallet Address (e.g., 0x...)" 
+                        class="flex-grow p-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                    <input 
+                        type="date" 
+                        id="start_date" 
+                        class="p-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                    <input 
+                        type="date" 
+                        id="end_date" 
+                        class="p-2 bg-gray-700 border border-gray-600 rounded text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                    <button 
+                        type="submit" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+                    >
+                        <i class="fas fa-search mr-2"></i> Analyze
+                    </button>
+                </div>
+                <div class="flex gap-4 text-sm text-gray-400">
+                    <label>Start Date</label>
+                    <label class="ml-auto md:ml-[220px]">End Date</label>
+                </div>
+            </form>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="loading-indicator" class="hidden text-center py-8">
+            <div class="loading">
+                <div></div><div></div><div></div>
+                <div></div><div></div><div></div>
+                <div></div><div></div><div></div>
+            </div>
+            <p class="mt-4 text-blue-400">Loading data, please wait...</p>
+        </div>
+
+        <!-- Risk Score, Total ETH, and Total Transactions Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- Risk Score Card -->
+            <div class="form-container p-4 rounded-lg shadow-lg">
+                <div class="text-center">
+                    <h3 class="text-xl font-semibold mb-2 text-blue-400">Risk Score</h3>
+                    <p id="risk-score" class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">--</p>
+                    <p class="text-sm text-gray-400">Risk Level</p>
+                </div>
+            </div>
+
+            <!-- Total ETH Card -->
+            <div class="form-container p-4 rounded-lg shadow-lg">
+                <div class="text-center">
+                    <h3 class="text-xl font-semibold mb-2 text-blue-400">Total ETH</h3>
+                    <p id="total-eth" class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">--</p>
+                    <p class="text-sm text-gray-400">Total Balance</p>
+                </div>
+            </div>
+
+            <!-- Total Transactions Card -->
+            <div class="form-container p-4 rounded-lg shadow-lg">
+                <div class="text-center">
+                    <h3 class="text-xl font-semibold mb-2 text-blue-400">Transactions</h3>
+                    <p id="total-txns" class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">--</p>
+                    <p class="text-sm text-gray-400">Total Count</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Metrics Table -->
+        <div class="form-container p-6 rounded-lg shadow-lg mb-6">
+            <h3 class="text-xl font-semibold mb-4 text-blue-400">Transaction Metrics</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <tbody>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Avg min between sent transactions</td>
+                            <td id="avg-min-sent" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Avg min between received transactions</td>
+                            <td id="avg-min-received" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Time Difference (First to Last)</td>
+                            <td id="time-diff" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Sent Transactions</td>
+                            <td id="sent-tnx" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Received Transactions</td>
+                            <td id="received-tnx" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Unique Senders</td>
+                            <td id="unique-received" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Unique Recipients</td>
+                            <td id="unique-sent" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Transaction Values -->
+        <div class="form-container p-6 rounded-lg shadow-lg mb-6">
+            <h3 class="text-xl font-semibold mb-4 text-blue-400">Transaction Values</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <tbody>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Max Value Received</td>
+                            <td id="max-received" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Average Value Received</td>
+                            <td id="avg-received" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Max Value Sent</td>
+                            <td id="max-sent" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Average Value Sent</td>
+                            <td id="avg-sent" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Total Ether Sent</td>
+                            <td id="total-eth-sent" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Total Ether Received</td>
+                            <td id="total-eth-received" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                        <tr class="border-b border-gray-700">
+                            <td class="px-4 py-2 text-gray-400">Total Ether Balance</td>
+                            <td id="total-eth-balance" class="px-4 py-2 text-white">--</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="hidden text-red-500 text-center p-4 mb-6"></div>
+
+        <!-- Transaction Visualization -->
+        <div id="spider-map" class="form-container p-6 rounded-lg shadow-lg mb-6">
+            <h3 class="text-xl font-semibold mb-4 text-blue-400">Transaction Network</h3>
+            <div id="network-container">
+                <iframe id="spider-map-frame" style="width: 100%; height: 100%; border: none;" scrolling="no"></iframe>
+                <div id="loading-spider-map" class="text-center p-4">
+                    <p>Select a wallet address and date range to view transaction network</p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        // Update the updateSpiderGraph function
+        async function updateSpiderGraph(walletAddress, startDate, endDate) {
+            try {
+                const loadingSpider = document.getElementById('loading-spider-map');
+                const spiderFrame = document.getElementById('spider-map-frame');
+                const networkContainer = document.getElementById('network-container');
+                
+                loadingSpider.innerHTML = '<p class="text-blue-400">Generating transaction network...</p>';
+                loadingSpider.style.display = 'block';
+                spiderFrame.style.display = 'none';
+                
+                const params = new URLSearchParams({
+                    wallet_address: walletAddress,
+                    start_date: startDate,
+                    end_date: endDate
+                });
+                
+                const response = await fetch(`/generate_spider_map/?${params}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const htmlContent = await response.text();
+                if (!htmlContent.trim()) {
+                    throw new Error('Empty visualization content received');
+                }
+                
+                // Create a blob from the HTML content
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const blobUrl = URL.createObjectURL(blob);
+                
+                // Set proper iframe dimensions
+                spiderFrame.style.width = '100%';
+                spiderFrame.style.height = '100%';
+                spiderFrame.style.border = 'none';
+                
+                // Update the iframe source and handle load event
+                spiderFrame.onload = function() {
+                    try {
+                        // Remove any unwanted scrollbars
+                        spiderFrame.contentWindow.document.body.style.overflow = 'hidden';
+                        
+                        // Make sure content fits properly
+                        const content = spiderFrame.contentWindow.document.body;
+                        content.style.margin = '0';
+                        content.style.padding = '0';
+                        content.style.height = '100%';
+                        content.style.width = '100%';
+                        
+                        // Ensure the container is visible
+                        networkContainer.style.display = 'block';
+                        
+                        // Clean up the blob URL
+                        URL.revokeObjectURL(blobUrl);
+                        
+                        // Show the frame
+                        spiderFrame.style.display = 'block';
+                        loadingSpider.style.display = 'none';
+                    } catch (error) {
+                        console.error('Error adjusting iframe content:', error);
+                    }
+                };
+                
+                spiderFrame.src = blobUrl;
+                
+            } catch (error) {
+                console.error('Error generating spider map:', error);
+                document.getElementById('loading-spider-map').innerHTML = 
+                    `<div class="text-center p-4 text-red-500">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Update the form submission event listener
+        document.getElementById('wallet-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const walletAddress = document.getElementById('wallet_input').value.trim();
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const errorMessage = document.getElementById('error-message');
+            
+            // Validate inputs
+            if (!walletAddress) {
+                errorMessage.textContent = 'Please enter a wallet address';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            if (!startDate || !endDate) {
+                errorMessage.textContent = 'Please select both start and end dates';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            if (new Date(startDate) > new Date(endDate)) {
+                errorMessage.textContent = 'Start date must be before end date';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            
+            // Reset error message and show loading
+            errorMessage.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+            
+            try {
+                // Fetch risk metrics with date range
+                const params = new URLSearchParams({
+                    wallet_address: walletAddress,
+                    start_date: startDate,
+                    end_date: endDate
+                });
+                
+                const riskResponse = await fetch(`/fetch_risk_metrics/?${params}`);
+                const riskData = await riskResponse.json();
+
+                if (riskResponse.ok) {
+                    // Update metrics display
+                    // Your existing metrics update code
+                    document.getElementById('risk-score').textContent = `${parseFloat(riskData.risk_score).toFixed(2)}%`;
+                    document.getElementById('total-eth').textContent = parseFloat(riskData.total_eth).toFixed(4);
+                    document.getElementById('total-txns').textContent = riskData.total_transactions;
+                    
+                    // Update detailed metrics
+                    const metricsMap = {
+                        'avg-min-sent': 'Avg min between sent tnx',
+                        'avg-min-received': 'Avg min between received tnx',
+                        'time-diff': 'Time Diff between first and last (Mins)',
+                        'sent-tnx': 'Sent tnx',
+                        'received-tnx': 'Received Tnx',
+                        'unique-received': 'Unique Received From Addresses',
+                        'unique-sent': 'Unique Sent To Addresses',
+                        'max-received': 'max value received ',
+                        'avg-received': 'avg val received',
+                        'max-sent': 'max val sent',
+                        'avg-sent': 'avg val sent',
+                        'total-eth-sent': 'total Ether sent',
+                        'total-eth-received': 'total ether received',
+                        'total-eth-balance': 'total ether balance'
+                    };
+                    
+                    Object.entries(metricsMap).forEach(([elementId, dataKey]) => {
+                        const element = document.getElementById(elementId);
+                        if (element && riskData[dataKey] !== undefined) {
+                            const value = riskData[dataKey];
+                            element.textContent = typeof value === 'number' ? value.toFixed(4) : value;
+                        }
+                    });
+                }
+
+                // Update the spider map visualization with date range
+                await updateSpiderGraph(walletAddress, startDate, endDate);
+
+            } catch (error) {
+                console.error('Error:', error);
+                errorMessage.textContent = error.message;
+                errorMessage.classList.remove('hidden');
+                document.getElementById('network-container').innerHTML = 
+                    '<div class="text-center p-4 text-red-500">Error loading transaction data</div>';
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+        </script>
+
+    </main>
+</body>
+</html>
+
