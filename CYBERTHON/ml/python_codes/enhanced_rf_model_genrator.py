@@ -68,7 +68,7 @@ class OptimizedEthereumFraudDetector:
     
     def train(self, data_path, test_size=0.2, optimize=True):
         """Train the Random Forest model on the dataset"""
-        print(f"Loading data from {data_path}...")
+        #print(f"Loading data from {data_path}...")
         df = pd.read_csv(data_path)
         
         # Preprocess the data
@@ -77,7 +77,7 @@ class OptimizedEthereumFraudDetector:
         # Load additional data from analyzed_wallet_datas.csv if it exists
         analyzed_data_path = "csv_files\\analyzed_wallet_datas.csv"
         if os.path.exists(analyzed_data_path):
-            print(f"Loading additional data from {analyzed_data_path}...")
+            #print(f"Loading additional data from {analyzed_data_path}...")
             additional_data = pd.read_csv(analyzed_data_path)
             additional_data = self.preprocess_data(additional_data)
             
@@ -88,9 +88,10 @@ class OptimizedEthereumFraudDetector:
             
             # Append the additional data to the main dataset
             df = pd.concat([df, additional_data], ignore_index=True)
-            print(f"Additional data from {analyzed_data_path} has been added to the training dataset.")
+            #print(f"Additional data from {analyzed_data_path} has been added to the training dataset.")
         else:
-            print(f"No additional data found at {analyzed_data_path}. Proceeding with the main dataset.")
+            pass
+            #print(f"No additional data found at {analyzed_data_path}. Proceeding with the main dataset.")
         
         # Split features and target
         X = df[self.features]
@@ -119,7 +120,7 @@ class OptimizedEthereumFraudDetector:
             self.model = RandomForestClassifier(n_estimators=100, random_state=42)
         
         # Train the model
-        print("Training the model...")
+        #print("Training the model...")
         self.model.fit(X_train_scaled, y_train)
         
         # Evaluate on test set
@@ -139,11 +140,11 @@ class OptimizedEthereumFraudDetector:
             'f1': f1
         }
         
-        print(f"Model Performance:")
-        print(f"Accuracy: {accuracy:.4f}")
-        print(f"Precision: {precision:.4f}")
-        print(f"Recall: {recall:.4f}")
-        print(f"F1 Score: {f1:.4f}")
+        #print(f"Model Performance:")
+        #print(f"Accuracy: {accuracy:.4f}")
+        #print(f"Precision: {precision:.4f}")
+        #print(f"Recall: {recall:.4f}")
+        #print(f"F1 Score: {f1:.4f}")
         
         # Display confusion matrix
         cm = confusion_matrix(y_test, y_pred)
@@ -158,8 +159,8 @@ class OptimizedEthereumFraudDetector:
         plt.savefig('images\\optimized_confusion_matrix.png')
         
         # Print classification report
-        print("\nClassification Report:")
-        print(classification_report(y_test, y_pred))
+        #print("\nClassification Report:")
+        #print(classification_report(y_test, y_pred))
         
         # Feature importance
         feature_importance = pd.DataFrame({
@@ -167,8 +168,8 @@ class OptimizedEthereumFraudDetector:
             'Importance': self.model.feature_importances_
         }).sort_values('Importance', ascending=False)
         
-        print("\nTop 10 Most Important Features:")
-        print(feature_importance.head(10))
+        #print("\nTop 10 Most Important Features:")
+        #print(feature_importance.head(10))
         
         # Save the model and related files
         self.save_model()
@@ -188,19 +189,19 @@ class OptimizedEthereumFraudDetector:
             joblib.dump(self.model, self.model_path)
             joblib.dump(self.scaler, self.scaler_path)
             joblib.dump(self.features, self.features_path)
-            print(f"Model saved to {self.model_path}")
-            print(f"Scaler saved to {self.scaler_path}")
-            print(f"Features saved to {self.features_path}")
+            #print(f"Model saved to {self.model_path}")
+            #print(f"Scaler saved to {self.scaler_path}")
+            #print(f"Features saved to {self.features_path}")
             
     def load_model(self):
         """Load a pre-trained model, scaler, and features"""
         try:
             if os.path.exists(self.model_path) and os.path.exists(self.scaler_path) and os.path.exists(self.features_path):
-                print(f"Loading model from {self.model_path}")
+                #print(f"Loading model from {self.model_path}")
                 self.model = joblib.load(self.model_path)
                 self.scaler = joblib.load(self.scaler_path)
                 self.features = joblib.load(self.features_path)
-                print("Model, scaler, and features loaded successfully")
+                #print("Model, scaler, and features loaded successfully")
                 return True
             else:
                 missing_files = []
@@ -210,10 +211,10 @@ class OptimizedEthereumFraudDetector:
                     missing_files.append(self.scaler_path)
                 if not os.path.exists(self.features_path):
                     missing_files.append(self.features_path)
-                print(f"Missing files: {', '.join(missing_files)}")
+                #print(f"Missing files: {', '.join(missing_files)}")
                 return False
         except Exception as e:
-            print(f"Error loading model: {str(e)}")
+            #print(f"Error loading model: {str(e)}")
             return False
     
     def predict_risk(self, wallet_data, threshold=0.5):
@@ -318,17 +319,17 @@ class OptimizedEthereumFraudDetector:
             'f1': f1
         }
         
-        print(f"Model Evaluation:")
-        print(f"Accuracy: {accuracy:.4f}")
-        print(f"Precision: {precision:.4f}")
-        print(f"Recall: {recall:.4f}")
-        print(f"F1 Score: {f1:.4f}")
+        #print(f"Model Evaluation:")
+        #print(f"Accuracy: {accuracy:.4f}")
+        #print(f"Precision: {precision:.4f}")
+        #print(f"Recall: {recall:.4f}")
+        #print(f"F1 Score: {f1:.4f}")
         
         return metrics
 
     def retrain_and_compare(self, data_path="csv_files\\enhanced_trained_dataset.csv", test_size=0.2):
         """Retrain the model using new data and automatically keep the better performing model"""
-        print("Retraining model with new data...")
+        #print("Retraining model with new data...")
         
         # First, check if we have a model to compare against
         original_model_exists = os.path.exists(self.model_path)
@@ -347,7 +348,7 @@ class OptimizedEthereumFraudDetector:
                 original_features = self.features
                 
                 # Evaluate the original model
-                print("Evaluating the original model...")
+               # print("Evaluating the original model...")
                 original_metrics = self.evaluate_model(data_path, test_size)
             
             # Clear the current model to train a new one
@@ -370,21 +371,21 @@ class OptimizedEthereumFraudDetector:
         self.features_path = temp_features_path
         
         # Train a new model
-        print("Training a new model...")
+        #print("Training a new model...")
         new_metrics = self.train(data_path, test_size=test_size)
         
         if original_model_exists and original_metrics:
             # Compare metrics
-            print("\nModel Comparison:")
-            print("Metric    | Original | New Model | Difference")
-            print("-" * 50)
+            #print("\nModel Comparison:")
+            #print("Metric    | Original | New Model | Difference")
+            #print("-" * 50)
             
             # Calculate overall improvement
             improvements = []
             for metric in ['accuracy', 'precision', 'recall', 'f1']:
                 diff = new_metrics[metric] - original_metrics[metric]
                 improvements.append(diff)
-                print(f"{metric.title():<9} | {original_metrics[metric]:.4f} | {new_metrics[metric]:.4f} | {diff:+.4f}")
+                #print(f"{metric.title():<9} | {original_metrics[metric]:.4f} | {new_metrics[metric]:.4f} | {diff:+.4f}")
             
             # Automatically decide based on average improvement
             avg_improvement = sum(improvements) / len(improvements)
@@ -392,7 +393,7 @@ class OptimizedEthereumFraudDetector:
             
             if keep_new:
                 # Replace the original model with the new one
-                print("\nNew model shows better performance. Automatically updating...")
+                #print("\nNew model shows better performance. Automatically updating...")
                 if os.path.exists(temp_model_path):
                     os.replace(temp_model_path, original_model_path)
                 if os.path.exists(temp_scaler_path):
@@ -405,11 +406,11 @@ class OptimizedEthereumFraudDetector:
                 self.scaler_path = original_scaler_path
                 self.features_path = original_features_path
                 
-                print("New model saved successfully!")
-                print(f"Average improvement across metrics: {avg_improvement:.4f}")
+                #print("New model saved successfully!")
+                #print(f"Average improvement across metrics: {avg_improvement:.4f}")
             else:
                 # Restore original model and paths
-                print("\nOriginal model performs better. Keeping original model...")
+                #print("\nOriginal model performs better. Keeping original model...")
                 self.model = original_model
                 self.scaler = original_scaler
                 self.features = original_features
@@ -422,10 +423,10 @@ class OptimizedEthereumFraudDetector:
                 for temp_file in [temp_model_path, temp_scaler_path, temp_features_path]:
                     if os.path.exists(temp_file):
                         os.remove(temp_file)
-                print(f"Average difference in metrics: {avg_improvement:.4f}")
+                #print(f"Average difference in metrics: {avg_improvement:.4f}")
         else:
             # If no original model exists, simply save the new one
-            print("No original model found. Saving new model...")
+            #print("No original model found. Saving new model...")
             self.model_path = original_model_path
             self.scaler_path = original_scaler_path
             self.features_path = original_features_path
@@ -435,4 +436,4 @@ class OptimizedEthereumFraudDetector:
 
 detector = OptimizedEthereumFraudDetector()
 # Call the train method on the instance
-detector.train("csv_files\\enhanced_trained_dataset.csv")
+detector.train("ML\\csv_files\\enhanced_trained_dataset.csv")

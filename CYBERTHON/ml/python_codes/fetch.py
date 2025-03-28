@@ -13,19 +13,14 @@ class EthereumWalletDataExtractor:
     
     def extract_wallet_features(self, wallet_address):
         """Extract specific features for a wallet address"""
-        print(f"Analyzing wallet: {wallet_address}")
-        
         # Fetch normal transactions
         try:
-            print("Fetching normal transactions...")
             normal_txs = self.eth.get_normal_txs_by_address(wallet_address, startblock=0, endblock=99999999, sort='asc')
             normal_df = pd.DataFrame(normal_txs)
             
             if normal_df.empty:
-                print("No normal transactions found")
                 normal_df = pd.DataFrame(columns=['from', 'to', 'value', 'timeStamp'])
         except Exception as e:
-            print(f"Error fetching normal transactions: {str(e)}")
             normal_df = pd.DataFrame(columns=['from', 'to', 'value', 'timeStamp'])
         
         # Process normal transactions
@@ -41,7 +36,7 @@ class EthereumWalletDataExtractor:
         
         # Identify contract interactions
         if not sent_txns.empty:
-            sent_txns['is_contract_interaction'] = sent_txns['input'].apply(lambda x: 1 if x != '0x' else 0)
+            sent_txns.loc[:, 'is_contract_interaction'] = sent_txns['input'].apply(lambda x: 1 if x != '0x' else 0)
             contract_txns = sent_txns[sent_txns['is_contract_interaction'] == 1]
         else:
             contract_txns = pd.DataFrame()
@@ -51,11 +46,9 @@ class EthereumWalletDataExtractor:
         
         # Fetch ERC20 Token Transfer Events
         try:
-            print("Fetching ERC20 transactions...")
             erc20_txs = self.eth.get_erc20_token_transfer_events_by_address(wallet_address, startblock=0, endblock=99999999, sort='asc')
             erc20_df = pd.DataFrame(erc20_txs)
         except Exception as e:
-            print(f"Error fetching ERC20 transactions: {str(e)}")
             erc20_df = pd.DataFrame(columns=['from', 'to', 'value', 'tokenName', 'tokenSymbol', 'timeStamp'])
         
         # Process ERC20 transactions
@@ -109,14 +102,15 @@ class EthereumWalletDataExtractor:
         all_data = []
         
         for idx, address in enumerate(addresses):
-            print(f"Processing wallet {idx+1}/{len(addresses)}")
+            #print(f"Processing wallet {idx+1}/{len(addresses)}")
             try:
                 features = self.extract_wallet_features(address)
                 all_data.append(features)
                 # Sleep to avoid API rate limits
                 time.sleep(1)
             except Exception as e:
-                print(f"Error processing wallet {address}: {str(e)}")
+                pass
+                #print(f"Error processing wallet {address}: {str(e)}")
         
         # Create DataFrame with results
         df = pd.DataFrame(all_data)
@@ -161,10 +155,10 @@ def main():
             with open(file_path, 'r') as f:
                 addresses = [line.strip() for line in f if line.strip()]
         except Exception as e:
-            print(f"Error reading file: {str(e)}")
+            #print(f"Error reading file: {str(e)}")
             return
     else:
-        print("Invalid choice")
+        #print("Invalid choice")
         return
     
     # Process wallets
@@ -173,12 +167,12 @@ def main():
     # Save results
     output_file = input("Enter output file name (default: wallet_data.csv): ") or "csv_files\\wallet_data.csv"
     result_df.to_csv(output_file, index=False)
-    print(f"Analysis complete. Results saved to {output_file}")
+    #print(f"Analysis complete. Results saved to {output_file}")
     
     # Print summary
-    print("\nSummary:")
-    print(f"Processed {len(result_df)} wallet addresses")
-    print(f"Selected {len(result_df.columns)} features per wallet")
+    #print("\nSummary:")
+    #print(f"Processed {len(result_df)} wallet addresses")
+    #print(f"Selected {len(result_df.columns)} features per wallet")
 
 if __name__ == "__main__":
     main()

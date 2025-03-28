@@ -406,174 +406,201 @@
             </div>
         </div>
 
+        <!-- Download Transaction Data -->
+        <div class="form-container p-6 rounded-lg shadow-lg mb-6">
+            <h3 class="text-xl font-semibold mb-4 text-blue-400">Download Transaction Data</h3>
+            <div class="flex gap-4">
+                <button 
+                    id="download-raw-data" 
+                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                >
+                    Download Full Data (CSV)
+                </button>
+                <button 
+                    id="download-filtered-data" 
+                    class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
+                >
+                    Download Filtered Data (CSV)
+                </button>
+            </div>
+        </div>
+
         <script>
-        // Update the updateSpiderGraph function
-        async function updateSpiderGraph(walletAddress, startDate, endDate) {
-            try {
-                const loadingSpider = document.getElementById('loading-spider-map');
-                const spiderFrame = document.getElementById('spider-map-frame');
-                const networkContainer = document.getElementById('network-container');
-                
-                loadingSpider.innerHTML = '<p class="text-blue-400">Generating transaction network...</p>';
-                loadingSpider.style.display = 'block';
-                spiderFrame.style.display = 'none';
-                
-                const params = new URLSearchParams({
-                    wallet_address: walletAddress,
-                    start_date: startDate,
-                    end_date: endDate
-                });
-                
-                const response = await fetch(`/generate_spider_map/?${params}`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const htmlContent = await response.text();
-                if (!htmlContent.trim()) {
-                    throw new Error('Empty visualization content received');
-                }
-                
-                // Create a blob from the HTML content
-                const blob = new Blob([htmlContent], { type: 'text/html' });
-                const blobUrl = URL.createObjectURL(blob);
-                
-                // Set proper iframe dimensions
-                spiderFrame.style.width = '100%';
-                spiderFrame.style.height = '100%';
-                spiderFrame.style.border = 'none';
-                
-                // Update the iframe source and handle load event
-                spiderFrame.onload = function() {
-                    try {
-                        // Remove any unwanted scrollbars
-                        spiderFrame.contentWindow.document.body.style.overflow = 'hidden';
-                        
-                        // Make sure content fits properly
-                        const content = spiderFrame.contentWindow.document.body;
-                        content.style.margin = '0';
-                        content.style.padding = '0';
-                        content.style.height = '100%';
-                        content.style.width = '100%';
-                        
-                        // Ensure the container is visible
-                        networkContainer.style.display = 'block';
-                        
-                        // Clean up the blob URL
-                        URL.revokeObjectURL(blobUrl);
-                        
-                        // Show the frame
-                        spiderFrame.style.display = 'block';
-                        loadingSpider.style.display = 'none';
-                    } catch (error) {
-                        console.error('Error adjusting iframe content:', error);
-                    }
-                };
-                
-                spiderFrame.src = blobUrl;
-                
-            } catch (error) {
-                console.error('Error generating spider map:', error);
-                document.getElementById('loading-spider-map').innerHTML = 
-                    `<div class="text-center p-4 text-red-500">Error: ${error.message}</div>`;
-            }
+
+document.getElementById('download-raw-data').addEventListener('click', function() {
+    window.location.href = '/download_raw_data/';
+});
+
+document.getElementById('download-filtered-data').addEventListener('click', function() {
+    window.location.href = '/download_filtered_data/';
+});
+
+async function updateSpiderGraph(walletAddress, startDate, endDate) {
+    try {
+        const loadingSpider = document.getElementById('loading-spider-map');
+        const spiderFrame = document.getElementById('spider-map-frame');
+        const networkContainer = document.getElementById('network-container');
+        
+        loadingSpider.innerHTML = '<p class="text-blue-400">Generating transaction network...</p>';
+        loadingSpider.style.display = 'block';
+        spiderFrame.style.display = 'none';
+        
+        const params = new URLSearchParams({
+            wallet_address: walletAddress,
+            start_date: startDate,
+            end_date: endDate
+        });
+        
+        const response = await fetch(`/generate_spider_map/?${params}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        // Update the form submission event listener
-        document.getElementById('wallet-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            
-            const walletAddress = document.getElementById('wallet_input').value.trim();
-            const startDate = document.getElementById('start_date').value;
-            const endDate = document.getElementById('end_date').value;
-            const loadingIndicator = document.getElementById('loading-indicator');
-            const errorMessage = document.getElementById('error-message');
-            
-            // Validate inputs
-            if (!walletAddress) {
-                errorMessage.textContent = 'Please enter a wallet address';
-                errorMessage.classList.remove('hidden');
-                return;
-            }
-
-            if (!startDate || !endDate) {
-                errorMessage.textContent = 'Please select both start and end dates';
-                errorMessage.classList.remove('hidden');
-                return;
-            }
-
-            if (new Date(startDate) > new Date(endDate)) {
-                errorMessage.textContent = 'Start date must be before end date';
-                errorMessage.classList.remove('hidden');
-                return;
-            }
-            
-            // Reset error message and show loading
-            errorMessage.classList.add('hidden');
-            loadingIndicator.classList.remove('hidden');
-            
+        
+        const htmlContent = await response.text();
+        if (!htmlContent.trim()) {
+            throw new Error('Empty visualization content received');
+        }
+        
+        // Create a blob from the HTML content
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // Set proper iframe dimensions
+        spiderFrame.style.width = '100%';
+        spiderFrame.style.height = '100%';
+        spiderFrame.style.border = 'none';
+        
+        // Update the iframe source and handle load event
+        spiderFrame.onload = function() {
             try {
-                // Fetch risk metrics with date range
-                const params = new URLSearchParams({
-                    wallet_address: walletAddress,
-                    start_date: startDate,
-                    end_date: endDate
-                });
+                // Remove any unwanted scrollbars
+                spiderFrame.contentWindow.document.body.style.overflow = 'hidden';
                 
-                const riskResponse = await fetch(`/fetch_risk_metrics/?${params}`);
-                const riskData = await riskResponse.json();
-
-                if (riskResponse.ok) {
-                    // Update metrics display
-                    // Your existing metrics update code
-                    document.getElementById('risk-score').textContent = `${parseFloat(riskData.risk_score).toFixed(2)}%`;
-                    document.getElementById('total-eth').textContent = parseFloat(riskData.total_eth).toFixed(4);
-                    document.getElementById('total-txns').textContent = riskData.total_transactions;
-                    
-                    // Update detailed metrics
-                    const metricsMap = {
-                        'avg-min-sent': 'Avg min between sent tnx',
-                        'avg-min-received': 'Avg min between received tnx',
-                        'time-diff': 'Time Diff between first and last (Mins)',
-                        'sent-tnx': 'Sent tnx',
-                        'received-tnx': 'Received Tnx',
-                        'unique-received': 'Unique Received From Addresses',
-                        'unique-sent': 'Unique Sent To Addresses',
-                        'max-received': 'max value received ',
-                        'avg-received': 'avg val received',
-                        'max-sent': 'max val sent',
-                        'avg-sent': 'avg val sent',
-                        'total-eth-sent': 'total Ether sent',
-                        'total-eth-received': 'total ether received',
-                        'total-eth-balance': 'total ether balance'
-                    };
-                    
-                    Object.entries(metricsMap).forEach(([elementId, dataKey]) => {
-                        const element = document.getElementById(elementId);
-                        if (element && riskData[dataKey] !== undefined) {
-                            const value = riskData[dataKey];
-                            element.textContent = typeof value === 'number' ? value.toFixed(4) : value;
-                        }
-                    });
-                }
-
-                // Update the spider map visualization with date range
-                await updateSpiderGraph(walletAddress, startDate, endDate);
-
+                // Make sure content fits properly
+                const content = spiderFrame.contentWindow.document.body;
+                content.style.margin = '0';
+                content.style.padding = '0';
+                content.style.height = '100%';
+                content.style.width = '100%';
+                
+                // Ensure the container is visible
+                networkContainer.style.display = 'block';
+                
+                // Clean up the blob URL
+                URL.revokeObjectURL(blobUrl);
+                
+                // Show the frame
+                spiderFrame.style.display = 'block';
+                loadingSpider.style.display = 'none';
             } catch (error) {
-                console.error('Error:', error);
-                errorMessage.textContent = error.message;
-                errorMessage.classList.remove('hidden');
-                document.getElementById('network-container').innerHTML = 
-                    '<div class="text-center p-4 text-red-500">Error loading transaction data</div>';
-            } finally {
-                loadingIndicator.classList.add('hidden');
+                console.error('Error adjusting iframe content:', error);
+            }
+        };
+        
+        spiderFrame.src = blobUrl;
+        
+    } catch (error) {
+        console.error('Error generating spider map:', error);
+        document.getElementById('loading-spider-map').innerHTML = 
+            `<div class="text-center p-4 text-red-500">Error: ${error.message}</div>`;
+    }
+}
+
+document.getElementById('wallet-form').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    
+    const walletAddress = document.getElementById('wallet_input').value.trim();
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const errorMessage = document.getElementById('error-message');
+    
+    // Validate inputs
+    if (!walletAddress) {
+        errorMessage.textContent = 'Please enter a wallet address';
+        errorMessage.classList.remove('hidden');
+        return;
+    }
+
+    if (!startDate || !endDate) {
+        errorMessage.textContent = 'Please select both start and end dates';
+        errorMessage.classList.remove('hidden');
+        return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+        errorMessage.textContent = 'Start date must be before end date';
+        errorMessage.classList.remove('hidden');
+        return;
+    }
+    
+    // Reset error message and show loading
+    errorMessage.classList.add('hidden');
+    loadingIndicator.classList.remove('hidden');
+    
+    try {
+        // Fetch risk metrics with date range
+        const params = new URLSearchParams({
+            wallet_address: walletAddress,
+            start_date: startDate,
+            end_date: endDate
+        });
+        
+        const riskResponse = await fetch(`/fetch_risk_metrics/?${params}`);
+        
+        if (!riskResponse.ok) {
+            throw new Error(`HTTP error! status: ${riskResponse.status}`);
+        }
+        
+        const riskData = await riskResponse.json();
+
+        // Update metrics display
+        document.getElementById('risk-score').textContent = `${parseFloat(riskData.risk_score).toFixed(2)}%`;
+        document.getElementById('total-eth').textContent = parseFloat(riskData.total_eth).toFixed(4);
+        document.getElementById('total-txns').textContent = riskData.total_transactions;
+        
+        // Update detailed metrics
+        const metricsMap = {
+            'avg-min-sent': 'Avg min between sent tnx',
+            'avg-min-received': 'Avg min between received tnx',
+            'time-diff': 'Time Diff between first and last (Mins)',
+            'sent-tnx': 'Sent tnx',
+            'received-tnx': 'Received Tnx',
+            'unique-received': 'Unique Received From Addresses',
+            'unique-sent': 'Unique Sent To Addresses',
+            'max-received': 'max value received ',
+            'avg-received': 'avg val received',
+            'max-sent': 'max val sent',
+            'avg-sent': 'avg val sent',
+            'total-eth-sent': 'total Ether sent',
+            'total-eth-received': 'total ether received',
+            'total-eth-balance': 'total ether balance'
+        };
+        
+        Object.entries(metricsMap).forEach(([elementId, dataKey]) => {
+            const element = document.getElementById(elementId);
+            if (element && riskData[dataKey] !== undefined) {
+                const value = riskData[dataKey];
+                element.textContent = typeof value === 'number' ? value.toFixed(4) : value;
             }
         });
+
+        // Update the spider map visualization with date range
+        await updateSpiderGraph(walletAddress, startDate, endDate);
+
+    } catch (error) {
+        console.error('Error:', error);
+        errorMessage.textContent = error.message;
+        errorMessage.classList.remove('hidden');
+        document.getElementById('network-container').innerHTML = 
+            '<div class="text-center p-4 text-red-500">Error loading transaction data</div>';
+    } finally {
+        loadingIndicator.classList.add('hidden');
+    }
+});
         </script>
 
     </main>
 </body>
 </html>
-
