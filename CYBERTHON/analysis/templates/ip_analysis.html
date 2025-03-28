@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Wallet Analyzer</title>
+</head>
+<body>
+    <h2>Enter Wallet Address for Analysis</h2>
+    <input type="text" id="wallet" placeholder="Enter Wallet Address" value="0x28C6c06298d514Db089934071355E5743bf21d60">
+    <button onclick="analyze()">Analyze</button>
+    
+    <pre id="logs"></pre>
+
+    <script>
+        function analyze() {
+            let wallet = document.getElementById("wallet").value;
+            let logsContainer = document.getElementById("logs");
+            logsContainer.innerText = "Processing...\n";
+
+            fetch(`/analyze_wallet/?wallet_address=${wallet}`)
+                .then(response => response.json())
+                .then(data => {
+                    logsContainer.innerText = data.logs;
+                })
+                .catch(error => {
+                    logsContainer.innerText = "Error: " + error;
+                });
+        }
+    </script>
+</body>
+</html>

@@ -11,7 +11,7 @@ CryptoTrace is a cryptocurrency transaction analysis tool designed to analyze an
 - *Transaction Analysis*: Analyze transactions for suspicious patterns.
 - *Visualization*: Generate spider maps and charts to visualize transaction flows.
 - *PDF Report Generation*: Generate detailed reports with visualizations and analyses.
-- *Suspicious Activity Detection*: Identify and flag suspicious transactions.
+- *Suspicious Activity* Detection: Identify and flag suspicious transactions.
 
 ## Installation
 

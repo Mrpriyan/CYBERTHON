@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse,FileResponse
 from django.conf import settings
 from web3 import Web3
 from etherscan import Etherscan
@@ -42,6 +42,14 @@ def forpdf(request):
 def analyze_transactions(request):
     """Render the analyze transactions page where users input a wallet address."""
     return render(request, "analysis/analyze_transactions.html")
+
+def download_raw_data(request):
+    file_path = os.path.join(os.path.dirname(_file_), 'spider_map', 'raw_transaction_data.csv')
+    return FileResponse(open(file_path, 'rb'), as_attachment=True, filename='raw_transaction_data.csv')
+
+def download_filtered_data(request):
+    file_path = os.path.join(os.path.dirname(_file_), 'spider_map', 'filtered_transaction_data.csv')
+    return FileResponse(open(file_path, 'rb'), as_attachment=True, filename='filtered_transaction_data.csv')
 
 
 def fetch_all_transaction(request):
@@ -104,7 +112,7 @@ def generate_spider_map(request):
         spider_map.main(wallet_address, start_date, end_date)
         
         # Get the path to the generated master.html in the spider_map directory
-        master_html_path = os.path.join(os.path.dirname(__file__), 'spider_map', 'master.html')
+        master_html_path = os.path.join(os.path.dirname(_file_), 'spider_map', 'master.html')
         
         if not os.path.exists(master_html_path):
             return JsonResponse({"error": "Visualization file not generated"}, status=500)
@@ -158,3 +166,51 @@ def fetch_risk_metrics(request):
     except Exception as e:
         logger.error(f"Error fetching risk metrics for wallet {wallet_address}: {str(e)}")
         return JsonResponse({"error": f"Failed to fetch risk metrics: {str(e)}"}, status=500)
+
+def ip_analysis(request):
+    if request.method == "POST":
+        wallet_address = request.POST.get("wallet_address")  # Get input from form
+        if not wallet_address:
+            return JsonResponse({"error": "No wallet address provided."}, status=400)
+        
+        analysis_result = analyze_wallet(wallet_address)  # Run analysis
+        return JsonResponse(analysis_result)  # Return result as JSON
+
+    return render(request, "ip_analysis.html")  # Show form page
+
+  # Create this HTML file
+import logging
+import io
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+# Set up logging
+log_stream = io.StringIO()
+logging.basicConfig(stream=log_stream, level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+from .utils.analyze_wallet import analyze_wallet  # Import the analysis function
+
+@csrf_exempt
+def analyze_wallet_view(request):
+    try:
+        from your_script import analyze_wallet  # Import your function
+
+        wallet_address = request.GET.get("wallet_address", "").strip()
+
+        if not wallet_address:
+            return JsonResponse({"error": "Wallet address is required"}, status=400)
+
+        # Clear previous logs
+        log_stream.truncate(0)
+        log_stream.seek(0)
+
+        # Run analysis
+        analyze_wallet(wallet_address)
+
+        # Get log output
+        log_output = log_stream.getvalue()
+
+        return JsonResponse({"logs": log_output}, json_dumps_params={'indent': 2})
+
+    except Exception as e:
+        logging.error("Error in analyze_wallet_view: %s", str(e))
+        return JsonResponse({"error": str(e)}, status=500)
